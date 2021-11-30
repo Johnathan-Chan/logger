@@ -47,18 +47,22 @@ func (l *Log) InitLog() *zap.Logger {
 	l.GetEncoder()
 
 	if !l.Config.Hierarchical {
-		write := []zapcore.WriteSyncer{
-			l.GetLogWriter(),
+		cores := []zapcore.Core{
+			zapcore.NewCore(zapcore.NewJSONEncoder(l.Encoder), l.GetLogWriter(), zap.DebugLevel),
 		}
 
 		if l.Config.Console {
-			write = append(write, os.Stdout)
+			cores = append(cores, zapcore.NewCore(zapcore.NewJSONEncoder(l.Encoder), zapcore.AddSync(os.Stdout), zap.DebugLevel))
 		}
 
-		core := zapcore.NewCore(zapcore.NewJSONEncoder(l.Encoder),
-			zapcore.NewMultiWriteSyncer(write...), zap.DebugLevel)
+		core := zapcore.NewTee(cores...)
 
-		return zap.New(core, zap.AddStacktrace(zap.DebugLevel))
+
+		if l.Config.Debug{
+			return zap.New(core, zap.AddCaller(), zap.AddStacktrace(zap.DebugLevel))
+		}
+
+		return zap.New(core)
 	}
 
 	cores := make([]zapcore.Core, 0)
