@@ -6,6 +6,13 @@ import (
 	"os"
 )
 
+var Hierarchical = map[string][2]zapcore.Level{
+	"info": {zapcore.WarnLevel, zapcore.DebugLevel},
+	"warn": {zapcore.ErrorLevel, zapcore.InfoLevel},
+	"error": {zapcore.DPanicLevel, zapcore.WarnLevel},
+	"painc": {zapcore.FatalLevel, zapcore.DPanicLevel},
+}
+
 type Config struct {
 	Dir          string
 	Filename     string
@@ -17,15 +24,6 @@ type Config struct {
 	MaxAge       int
 	Compress     bool
 	Console      bool
-}
-
-var Hierarchical = map[string]zapcore.Level{
-	"info":   zapcore.InfoLevel,
-	"warn":   zapcore.WarnLevel,
-	"error":  zapcore.ErrorLevel,
-	"dpanic": zapcore.DPanicLevel,
-	"panic":  zapcore.PanicLevel,
-	//"fatal": zapcore.FatalLevel,
 }
 
 type Log struct {
@@ -66,12 +64,21 @@ func (l *Log) InitLog() *zap.Logger {
 	}
 
 	cores := make([]zapcore.Core, 0)
-	for level, hierarchical := range Hierarchical {
-		core := zapcore.NewCore(zapcore.NewJSONEncoder(l.Encoder), l.GetLogWriter(level+"-"), zap.LevelEnablerFunc(func(level zapcore.Level) bool {
-			return level == hierarchical
-		}))
-		cores = append(cores, core)
-	}
+	cores = append(cores, zapcore.NewCore(zapcore.NewJSONEncoder(l.Encoder), l.GetLogWriter("info"+"-"), zap.LevelEnablerFunc(func(lvl zapcore.Level) bool {
+		return lvl < zapcore.WarnLevel && lvl >= zapcore.DebugLevel
+	})))
+
+	cores = append(cores, zapcore.NewCore(zapcore.NewJSONEncoder(l.Encoder), l.GetLogWriter("warn"+"-"), zap.LevelEnablerFunc(func(lvl zapcore.Level) bool {
+		return lvl < zapcore.ErrorLevel && lvl >= zapcore.WarnLevel
+	})))
+
+	cores = append(cores, zapcore.NewCore(zapcore.NewJSONEncoder(l.Encoder), l.GetLogWriter("error"+"-"), zap.LevelEnablerFunc(func(lvl zapcore.Level) bool {
+		return lvl < zapcore.DPanicLevel && lvl >= zapcore.ErrorLevel
+	})))
+
+	cores = append(cores, zapcore.NewCore(zapcore.NewJSONEncoder(l.Encoder), l.GetLogWriter("painc"+"-"), zap.LevelEnablerFunc(func(lvl zapcore.Level) bool {
+		return lvl >= zapcore.DPanicLevel
+	})))
 
 	cores = append(cores, zapcore.NewCore(zapcore.NewJSONEncoder(l.Encoder), zapcore.AddSync(os.Stdout), zap.LevelEnablerFunc(func(level zapcore.Level) bool {
 		return level == zapcore.FatalLevel
