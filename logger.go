@@ -67,7 +67,7 @@ func (l *Log) InitLog() *zap.Logger {
 
 	cores := make([]zapcore.Core, 0)
 	for level, hierarchical := range Hierarchical {
-		l.Config.Filename = level + "/" + l.Config.Filename
+		l.Config.Filename = level + "-" + l.Config.Filename
 		core := zapcore.NewCore(zapcore.NewJSONEncoder(l.Encoder), l.GetLogWriter(), zap.LevelEnablerFunc(func(level zapcore.Level) bool {
 			return level == hierarchical
 		}))

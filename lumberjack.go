@@ -162,9 +162,9 @@ func (l *Logger) Write(p []byte) (n int, err error) {
 		var buf buffer.Buffer
 		buf.WriteString(l.Dir)
 		buf.WriteString("/")
-		buf.WriteString(timeStr)
-		buf.WriteString("/")
 		buf.WriteString(l.ServerName)
+		buf.WriteString("/")
+		buf.WriteString(timeStr)
 		buf.WriteString("/")
 		buf.WriteString(l.Filename)
 
@@ -570,7 +570,7 @@ func (b byFormatTime) Len() int {
 
 func TodayTimestamp() (int64, string) {
 	now := time.Now().Unix()
-	timeStr := time.Unix(now, 0).Format("2006/01/02")
-	t, _ := time.ParseInLocation("2006/01/02", timeStr, time.Local)
+	timeStr := time.Unix(now, 0).Format("2006-01")
+	t, _ := time.ParseInLocation("2006-01", timeStr, time.Local)
 	return t.Unix(), timeStr
 }
