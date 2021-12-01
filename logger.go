@@ -48,7 +48,7 @@ func (l *Log) InitLog() *zap.Logger {
 
 	if !l.Config.Hierarchical {
 		cores := []zapcore.Core{
-			zapcore.NewCore(zapcore.NewJSONEncoder(l.Encoder), l.GetLogWriter(), zap.DebugLevel),
+			zapcore.NewCore(zapcore.NewJSONEncoder(l.Encoder), l.GetLogWriter(""), zap.DebugLevel),
 		}
 
 		if l.Config.Console {
@@ -67,8 +67,7 @@ func (l *Log) InitLog() *zap.Logger {
 
 	cores := make([]zapcore.Core, 0)
 	for level, hierarchical := range Hierarchical {
-		l.Config.Filename = level + "-" + l.Config.Filename
-		core := zapcore.NewCore(zapcore.NewJSONEncoder(l.Encoder), l.GetLogWriter(), zap.LevelEnablerFunc(func(level zapcore.Level) bool {
+		core := zapcore.NewCore(zapcore.NewJSONEncoder(l.Encoder), l.GetLogWriter(level+"-"), zap.LevelEnablerFunc(func(level zapcore.Level) bool {
 			return level == hierarchical
 		}))
 		cores = append(cores, core)
@@ -105,10 +104,10 @@ func (l *Log) GetEncoder() {
 	l.Encoder.EncodeLevel = zapcore.CapitalLevelEncoder
 }
 
-func (l *Log) GetLogWriter() zapcore.WriteSyncer {
+func (l *Log) GetLogWriter(prefix string) zapcore.WriteSyncer {
 	hook := Logger{
 		Dir:        l.Config.Dir,
-		Filename:   l.Config.Filename,
+		Filename:   prefix+l.Config.Filename,
 		ServerName: l.Config.ServerName,
 		MaxSize:    l.Config.MaxSize,
 		MaxBackups: l.Config.MaxBackups,
